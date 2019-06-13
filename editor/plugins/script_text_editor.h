@@ -141,12 +141,12 @@ class ScriptTextEditor : public ScriptEditorBase {
 	};
 
 protected:
-	static void _code_complete_scripts(void *p_ud, const String &p_code, List<String> *r_options, bool &r_force);
+	static void _code_complete_scripts(void *p_ud, const String &p_code, List<ScriptCodeCompletionOption> *r_options, bool &r_force);
 	void _breakpoint_toggled(int p_row);
 
 	//no longer virtual
 	void _validate_script();
-	void _code_complete_script(const String &p_code, List<String> *r_options, bool &r_force);
+	void _code_complete_script(const String &p_code, List<ScriptCodeCompletionOption> *r_options, bool &r_force);
 	void _load_theme_settings();
 	void _set_theme_for_script();
 	void _show_warnings_panel(bool p_show);
