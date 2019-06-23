@@ -344,6 +344,33 @@ String ExtendGDScriptParser::get_text_for_completion(const lsp::Position &p_curs
 	return longthing;
 }
 
+int ExtendGDScriptParser::get_parameter_count(const lsp::Position &p_cursor, lsp::Position *begining_position) {
+
+	int count = 0;
+	int len = lines.size();
+	begining_position->line = p_cursor.line;
+	for (int i = 0; i < len; i++) {
+
+		if (i == p_cursor.line) {
+			int closest_bracket_opening_pos = lines[i].substr(0, p_cursor.character).find_last("(");
+			int closest_bracket_closing_pos = lines[i].substr(0, p_cursor.character).find_last(")");
+			if (closest_bracket_closing_pos > closest_bracket_opening_pos || closest_bracket_opening_pos == -1) {
+				return 0;
+			}
+			for (int j = closest_bracket_opening_pos; j < p_cursor.character; j++) {
+				if (lines[i][j] == ',') {
+					count++;
+				}
+			}
+			begining_position->character = closest_bracket_opening_pos + 1;
+		} else if (i > p_cursor.line) {
+			break;
+		}
+	}
+
+	return count;
+}
+
 String ExtendGDScriptParser::get_text_for_lookup_symbol(const lsp::Position &p_cursor, const String &p_symbol, bool p_func_requred) const {
 	String longthing;
 	int len = lines.size();

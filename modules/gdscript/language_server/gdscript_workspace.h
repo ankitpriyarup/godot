@@ -36,6 +36,11 @@
 #include "gdscript_extend_parser.h"
 #include "lsp.hpp"
 
+struct ScriptItemDocumentationType {
+	String item;
+	String documentation;
+};
+
 class GDScriptWorkspace : public Reference {
 	GDCLASS(GDScriptWorkspace, Reference);
 
@@ -71,6 +76,7 @@ public:
 	void publish_diagnostics(const String &p_path);
 	void completion(const lsp::CompletionParams &p_params, List<ScriptCodeCompletionOption> *r_options);
 	const lsp::DocumentSymbol *resolve_symbol(const lsp::TextDocumentPositionParams &p_doc_pos, const String &p_symbol_name = "", bool p_func_requred = false);
+	Error signatureHelp(const lsp::TextDocumentPositionParams &p_params, ScriptItemDocumentationType *r_hint, List<ScriptItemDocumentationType> *r_parameters, int *cur_active_parameter);
 	static String marked_documentation(const String &p_bbcode);
 
 	GDScriptWorkspace();

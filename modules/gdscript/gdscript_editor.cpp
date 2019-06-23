@@ -2944,8 +2944,10 @@ Error GDScriptLanguage::complete_code(const String &p_code, const String &p_path
 		} break;
 	}
 
-	for (Map<String, ScriptCodeCompletionOption>::Element *E = options.front(); E; E = E->next()) {
-		r_options->push_back(E->get());
+	if (r_options != NULL) {
+		for (Map<String, ScriptCodeCompletionOption>::Element *E = options.front(); E; E = E->next()) {
+			r_options->push_back(E->get());
+		}
 	}
 
 	return OK;

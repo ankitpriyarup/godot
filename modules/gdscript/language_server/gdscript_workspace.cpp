@@ -442,6 +442,51 @@ const lsp::DocumentSymbol *GDScriptWorkspace::resolve_symbol(const lsp::TextDocu
 	return symbol;
 }
 
+Error GDScriptWorkspace::signatureHelp(const lsp::TextDocumentPositionParams &p_params, ScriptItemDocumentationType *r_hint, List<ScriptItemDocumentationType> *r_parameters, int *cur_active_parameter) {
+	String path = get_file_path(p_params.textDocument.uri);
+	bool forced = false;
+	String call_hint;
+	lsp::Position begining_position = p_params.position;
+	if (Map<String, ExtendGDScriptParser *>::Element *E = parse_results.find(path)) {
+		*cur_active_parameter = E->get()->get_parameter_count(p_params.position, &begining_position);
+		String code = E->get()->get_text_for_completion(begining_position);
+		GDScriptLanguage::get_singleton()->complete_code(code, path, NULL, NULL, forced, call_hint);
+	}
+
+	if (call_hint.size() == 0) {
+		return ERR_DOES_NOT_EXIST;
+	}
+
+	lsp::TextDocumentPositionParams modified_param = p_params;
+	int bracket_start_pos = call_hint.find("(");
+	int key_start_pos = call_hint.substr(0, bracket_start_pos).find_last(" ") + 1;
+	String key = call_hint.substr(key_start_pos, bracket_start_pos - key_start_pos);
+	modified_param.position = begining_position;
+	const lsp::DocumentSymbol *symbol = resolve_symbol(modified_param, key);
+	if (!symbol) {
+		return ERR_DOES_NOT_EXIST;
+	}
+
+	r_hint->item = call_hint.replace(String::chr(0xFFFF), "");
+	r_hint->documentation = symbol->detail + "\n\n" + symbol->documentation;
+	Vector<String> parameters = call_hint.split(",", false);
+	if (parameters.size() > 0 && parameters[0].find(String::chr(0xFFFF)) != -1) {
+		parameters.set(0, parameters[0].split(String::chr(0xFFFF))[1]);
+	}
+
+	for (int i = 0; i < parameters.size(); ++i) {
+		ScriptItemDocumentationType val;
+		val.item = parameters[i].replace(String::chr(0xFFFF), "").replace(" )", "");
+		if (val.item.size() == 0) {
+			continue;
+		}
+		val.documentation = val.item;
+		r_parameters->push_back(val);
+	}
+
+	return OK;
+}
+
 GDScriptWorkspace::GDScriptWorkspace() {
 	ProjectSettings::get_singleton()->get_resource_path();
 }

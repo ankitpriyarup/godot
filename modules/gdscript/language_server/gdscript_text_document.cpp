@@ -45,6 +45,7 @@ void GDScriptTextDocument::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("colorPresentation"), &GDScriptTextDocument::colorPresentation);
 	ClassDB::bind_method(D_METHOD("hover"), &GDScriptTextDocument::hover);
 	ClassDB::bind_method(D_METHOD("definition"), &GDScriptTextDocument::definition);
+	ClassDB::bind_method(D_METHOD("signatureHelp"), &GDScriptTextDocument::signatureHelp);
 }
 
 void GDScriptTextDocument::didOpen(const Variant &p_param) {
@@ -101,7 +102,7 @@ Array GDScriptTextDocument::completion(const Dictionary &p_params) {
 		const ScriptCodeCompletionOption &option = E->get();
 		lsp::CompletionItem item;
 		item.label = option.display;
-		item.insertText = option.insert_text;
+		item.insertText = option.display;
 		item.data = request_data;
 
 		if (params.context.triggerKind == lsp::CompletionTriggerKind::TriggerCharacter && (params.context.triggerCharacter == "'" || params.context.triggerCharacter == "\"") && (option.insert_text.begins_with("'") || option.insert_text.begins_with("\""))) {
@@ -216,6 +217,40 @@ Array GDScriptTextDocument::definition(const Dictionary &p_params) {
 	}
 
 	return arr;
+}
+
+Variant GDScriptTextDocument::signatureHelp(const Dictionary &p_params) {
+	Variant ret;
+
+	lsp::TextDocumentPositionParams params;
+	params.load(p_params);
+	Dictionary request_data = params.to_json();
+
+	ScriptItemDocumentationType hint;
+	List<ScriptItemDocumentationType> parameters;
+	int cur_active_parameter = 0;
+	if (GDScriptLanguageProtocol::get_singleton()->get_workspace().signatureHelp(params, &hint, &parameters, &cur_active_parameter) != OK) {
+		return ret;
+	}
+
+	lsp::SignatureHelp result;
+	lsp::SignatureInformation cur_signature;
+	cur_signature.label = hint.item;
+	cur_signature.documentation = hint.documentation;
+	for (int i = 0; i < parameters.size(); ++i) {
+		lsp::ParameterInformation val;
+		val.label = parameters[i].item;
+		val.documentation = parameters[i].documentation;
+		cur_signature.parameters.push_back(val);
+	}
+
+	result.signatures.push_back(cur_signature);
+
+	result.activeSignature = 0;
+	result.activeParameter = cur_active_parameter;
+
+	ret = result.to_json();
+	return ret;
 }
 
 GDScriptTextDocument::GDScriptTextDocument() {
