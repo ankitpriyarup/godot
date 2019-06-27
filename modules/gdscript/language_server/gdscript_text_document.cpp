@@ -48,6 +48,7 @@ void GDScriptTextDocument::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("hover"), &GDScriptTextDocument::hover);
 	ClassDB::bind_method(D_METHOD("definition"), &GDScriptTextDocument::definition);
 	ClassDB::bind_method(D_METHOD("signatureHelp"), &GDScriptTextDocument::signatureHelp);
+	ClassDB::bind_method(D_METHOD("rename"), &GDScriptTextDocument::rename);
 }
 
 void GDScriptTextDocument::didOpen(const Variant &p_param) {
@@ -375,6 +376,52 @@ Variant GDScriptTextDocument::signatureHelp(const Dictionary &p_params) {
 
 	result.activeSignature = 0;
 	result.activeParameter = cur_active_parameter;
+
+	ret = result.to_json();
+	return ret;
+}
+
+Variant GDScriptTextDocument::rename(const Dictionary &p_params) {
+	Variant ret;
+
+	lsp::TextDocumentPositionParams params;
+	params.load(p_params);
+	String newName = p_params["newName"];
+
+	lsp::WorkspaceEdit result;
+
+	const lsp::DocumentSymbol *symbol = GDScriptLanguageProtocol::get_singleton()->get_workspace()->resolve_symbol(params);
+	if (symbol) {
+		lsp::Change change;
+		lsp::TextEdit edit;
+		edit.newText = newName;
+		edit.range = symbol->range;
+		change.uri = symbol->uri;
+		change.textEdit.push_back(edit);
+
+		const String &path = GDScriptLanguageProtocol::get_singleton()->get_workspace()->get_file_path(symbol->uri);
+		if (file_checker->file_exists(path)) {
+			result.changes.push_back(change);
+		}
+	} else if (GDScriptLanguageProtocol::get_singleton()->is_smart_resolve_enabled()) {
+
+		List<const lsp::DocumentSymbol *> list;
+		GDScriptLanguageProtocol::get_singleton()->get_workspace()->resolve_related_symbols(params, list);
+		for (List<const lsp::DocumentSymbol *>::Element *E = list.front(); E; E = E->next()) {
+
+			if (const lsp::DocumentSymbol *s = E->get()) {
+
+				lsp::Change change;
+				lsp::TextEdit edit;
+				edit.newText = newName;
+				edit.range = s->range;
+				change.uri = s->uri;
+				change.textEdit.push_back(edit);
+
+				result.changes.push_back(change);
+			}
+		}
+	}
 
 	ret = result.to_json();
 	return ret;

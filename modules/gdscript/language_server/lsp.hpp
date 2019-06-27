@@ -214,6 +214,13 @@ struct TextEdit {
 	 * empty string.
 	 */
 	String newText;
+
+	Dictionary to_json() const {
+		Dictionary dict;
+		dict["range"] = range.to_json();
+		dict["newText"] = newText;
+		return dict;
+	}
 };
 
 /**
@@ -1445,6 +1452,37 @@ struct SignatureHelp {
 		dict["signatures"] = arr;
 		dict["activeSignature"] = activeSignature;
 		dict["activeParameter"] = activeParameter;
+		return dict;
+	}
+};
+
+struct Change {
+	DocumentUri uri;
+	Vector<TextEdit> textEdit;
+
+	Array get_edits() const {
+		Array arr;
+		arr.resize(textEdit.size());
+		for (int i = 0; i < textEdit.size(); i++) {
+			arr[i] = textEdit[i].to_json();
+		}
+		return arr;
+	}
+};
+
+struct WorkspaceEdit {
+	/**
+	 * Holds changes to existing resources.
+	 */
+	Vector<Change> changes;
+
+	Dictionary to_json() const {
+		Dictionary dict;
+		Dictionary val;
+		for (int i = 0; i < changes.size(); ++i) {
+			val[changes[i].uri] = changes[i].get_edits();
+		}
+		dict["changes"] = val;
 		return dict;
 	}
 };
