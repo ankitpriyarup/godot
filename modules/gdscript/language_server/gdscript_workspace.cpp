@@ -518,6 +518,19 @@ void GDScriptWorkspace::resolve_related_symbols(const lsp::TextDocumentPositionP
 	}
 }
 
+void GDScriptWorkspace::resolve_rename_range(const lsp::TextDocumentPositionParams &p_params, const lsp::Range &p_symbol_range, const lsp::DocumentSymbol *p_symbol, List<lsp::Range> *r_resolved_range) {
+
+	String path = get_file_path(p_params.textDocument.uri);
+	lsp::Range definition_range = p_symbol_range;
+	if (Map<String, ExtendGDScriptParser *>::Element *E = parse_results.find(path)) {
+		String cur_line = E->get()->get_lines()[p_symbol_range.start.line];
+		definition_range.start.character = cur_line.find(p_symbol->name);
+		definition_range.end.character = definition_range.start.character + p_symbol->name.length();
+		r_resolved_range->push_back(definition_range);
+		E->get()->get_all_occurence(p_symbol, r_resolved_range);
+	}
+}
+
 Error GDScriptWorkspace::signatureHelp(const lsp::TextDocumentPositionParams &p_params, String *r_signature_name, String *r_signature_doc, List<String> *r_signature_parameter, int *cur_active_parameter) {
 
 	String path = get_file_path(p_params.textDocument.uri);

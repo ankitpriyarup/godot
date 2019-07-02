@@ -393,11 +393,16 @@ Variant GDScriptTextDocument::rename(const Dictionary &p_params) {
 	const lsp::DocumentSymbol *symbol = GDScriptLanguageProtocol::get_singleton()->get_workspace()->resolve_symbol(params);
 	if (symbol) {
 		lsp::Change change;
-		lsp::TextEdit edit;
-		edit.newText = newName;
-		edit.range = symbol->range;
 		change.uri = symbol->uri;
-		change.textEdit.push_back(edit);
+		List<lsp::Range> edit_ranges;
+		GDScriptLanguageProtocol::get_singleton()->get_workspace()->resolve_rename_range(params, symbol->range, symbol, &edit_ranges);
+
+		for (int i = 0; i < edit_ranges.size(); ++i) {
+			lsp::TextEdit edit;
+			edit.newText = newName;
+			edit.range = edit_ranges[i];
+			change.textEdit.push_back(edit);
+		}
 
 		const String &path = GDScriptLanguageProtocol::get_singleton()->get_workspace()->get_file_path(symbol->uri);
 		if (file_checker->file_exists(path)) {
@@ -412,11 +417,16 @@ Variant GDScriptTextDocument::rename(const Dictionary &p_params) {
 			if (const lsp::DocumentSymbol *s = E->get()) {
 
 				lsp::Change change;
-				lsp::TextEdit edit;
-				edit.newText = newName;
-				edit.range = s->range;
 				change.uri = s->uri;
-				change.textEdit.push_back(edit);
+				List<lsp::Range> edit_ranges;
+				GDScriptLanguageProtocol::get_singleton()->get_workspace()->resolve_rename_range(params, s->range, s, &edit_ranges);
+
+				for (int i = 0; i < edit_ranges.size(); ++i) {
+					lsp::TextEdit edit;
+					edit.newText = newName;
+					edit.range = edit_ranges[i];
+					change.textEdit.push_back(edit);
+				}
 
 				result.changes.push_back(change);
 			}

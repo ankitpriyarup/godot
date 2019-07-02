@@ -82,6 +82,7 @@ public:
 
 	const lsp::DocumentSymbol *resolve_symbol(const lsp::TextDocumentPositionParams &p_doc_pos, const String &p_symbol_name = "", bool p_func_requred = false);
 	void resolve_related_symbols(const lsp::TextDocumentPositionParams &p_doc_pos, List<const lsp::DocumentSymbol *> &r_list);
+	void resolve_rename_range(const lsp::TextDocumentPositionParams &p_params, const lsp::Range &p_symbol_range, const lsp::DocumentSymbol *p_symbol, List<lsp::Range> *r_resolved_range);
 
 	Dictionary generate_script_api(const String &p_path);
 

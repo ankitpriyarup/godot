@@ -85,6 +85,7 @@ public:
 	int get_parameter_count(const lsp::Position &p_cursor, lsp::Position *begining_position);
 	String get_text_for_lookup_symbol(const lsp::Position &p_cursor, const String &p_symbol = "", bool p_func_requred = false) const;
 	String get_identifier_under_position(const lsp::Position &p_position, Vector2i &p_offset) const;
+	void get_all_occurence(const lsp::DocumentSymbol *p_symbol, List<lsp::Range> *r_resolved_range);
 	String get_uri() const;
 
 	const lsp::DocumentSymbol *get_symbol_defined_at_line(int p_line) const;

@@ -506,6 +506,64 @@ String ExtendGDScriptParser::get_identifier_under_position(const lsp::Position &
 	return "";
 }
 
+void ExtendGDScriptParser::get_all_occurence(const lsp::DocumentSymbol *p_symbol, List<lsp::Range> *r_resolved_range)
+{
+	int declaration_indentation = lines[p_symbol->range.start.line].get_slice_count(" ");
+	for (int i = p_symbol->range.start.line + 1; i < lines.size(); ++i) {
+		int find_res_1 = lines[i].find("(" + p_symbol->name);
+		int find_res_2 = lines[i].find("," + p_symbol->name);
+		int find_res_3 = lines[i].find("." + p_symbol->name);
+		int find_res_4 = lines[i].find(" " + p_symbol->name);
+		int find_res_5 = lines[i].find(p_symbol->name + " ");
+
+		if (find_res_1 != -1) {
+			lsp::Range range;
+			range.start.line = i;
+			range.start.character = find_res_1 + 1;
+			range.end.line = i;
+			range.end.character = range.start.character + p_symbol->name.length();
+			r_resolved_range->push_back(range);
+		}
+		if (find_res_2 != -1) {
+			lsp::Range range;
+			range.start.line = i;
+			range.start.character = find_res_2 + 1;
+			range.end.line = i;
+			range.end.character = range.start.character + p_symbol->name.length();
+			r_resolved_range->push_back(range);
+		}
+		if (find_res_3 != -1) {
+			lsp::Range range;
+			range.start.line = i;
+			range.start.character = find_res_3 + 1;
+			range.end.line = i;
+			range.end.character = range.start.character + p_symbol->name.length();
+			r_resolved_range->push_back(range);
+		}
+		if (find_res_4 != -1) {
+			lsp::Range range;
+			range.start.line = i;
+			range.start.character = find_res_4 + 1;
+			range.end.line = i;
+			range.end.character = range.start.character + p_symbol->name.length();
+			r_resolved_range->push_back(range);
+		}
+		if (find_res_5 != -1) {
+			lsp::Range range;
+			range.start.line = i;
+			range.start.character = find_res_5;
+			range.end.line = i;
+			range.end.character = range.start.character + p_symbol->name.length();
+			r_resolved_range->push_back(range);
+		}
+
+		int current_indentation = lines[p_symbol->range.start.line].get_slice_count(" ");
+		if (current_indentation < declaration_indentation) {
+			break;
+		}
+	}
+}
+
 String ExtendGDScriptParser::get_uri() const {
 	return GDScriptLanguageProtocol::get_singleton()->get_workspace()->get_file_uri(path);
 }
