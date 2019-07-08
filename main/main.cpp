@@ -1310,6 +1310,7 @@ bool Main::start() {
 	String _export_preset;
 	bool export_debug = false;
 	bool check_only = false;
+	bool prepareDocMarkdown = false;
 
 	main_timer_sync.init(OS::get_singleton()->get_ticks_usec());
 
@@ -1339,6 +1340,7 @@ bool Main::start() {
 #ifdef TOOLS_ENABLED
 			} else if (args[i] == "--doctool") {
 				doc_tool = args[i + 1];
+				prepareDocMarkdown = args[i + 2] == "1";
 				for (int j = i + 2; j < args.size(); j++)
 					removal_docs.push_back(args[j]);
 			} else if (args[i] == "--export") {
@@ -1414,7 +1416,13 @@ bool Main::start() {
 		}
 
 		print_line("Generating new docs...");
-		doc.save_classes(index_path, doc_data_classes);
+		if (prepareDocMarkdown) {
+			print_line("Preparing Markdown...");
+			doc.save_classes_markdown(index_path, doc_data_classes);
+		} else {
+			print_line("Preparing XML...");
+			doc.save_classes(index_path, doc_data_classes);
+		}
 
 		return false;
 	}
