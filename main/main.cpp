@@ -74,7 +74,6 @@
 #include "editor/doc/doc_data.h"
 #include "editor/doc/doc_data_class_path.gen.h"
 #include "editor/editor_node.h"
-#include "editor/editor_settings.h"
 #include "editor/project_manager.h"
 #endif
 
@@ -1339,8 +1338,8 @@ bool Main::start() {
 				test = args[i + 1];
 #ifdef TOOLS_ENABLED
 			} else if (args[i] == "--doctool") {
-				doc_tool = args[i + 1];
-				prepareDocMarkdown = args[i + 2] == "1";
+				prepareDocMarkdown = args[i + 1] == "1";
+				doc_tool = (args.size() > i + 2) ? args[i + 2] : "";
 				for (int j = i + 2; j < args.size(); j++)
 					removal_docs.push_back(args[j]);
 			} else if (args[i] == "--export") {
@@ -1374,13 +1373,17 @@ bool Main::start() {
 	GLOBAL_DEF("editor/active", editor);
 
 	String main_loop_type;
+
 #ifdef TOOLS_ENABLED
+	if (doc_tool == "" && prepareDocMarkdown) {
+		doc_tool = OS::get_singleton()->get_data_path() + "/godot";
+	}
 	if (doc_tool != "") {
 
 		{
 			DirAccessRef da = DirAccess::open(doc_tool);
 			if (!da) {
-				ERR_EXPLAIN("Argument supplied to --doctool must be a base godot build directory");
+				ERR_EXPLAIN("Argument supplied to --doctool must be a base Godot build directory");
 				ERR_FAIL_V(false);
 			}
 		}
@@ -1398,12 +1401,26 @@ bool Main::start() {
 			doc_data_classes[name] = path;
 			if (!checked_paths.has(path)) {
 				checked_paths.insert(path);
+
+				// Don't create seperate directory if markdown because everything is dumped under doc
+				if (!prepareDocMarkdown) {
+					// Create the module documentation directory if it doesn't exist
+					DirAccess *da = DirAccess::create_for_path(path);
+					da->make_dir_recursive(path);
+					memdelete(da);
+				}
+
 				docsrc.load_classes(path);
 				print_line("Loading docs from: " + path);
 			}
 		}
 
-		String index_path = doc_tool.plus_file("doc/classes");
+		String index_path = (prepareDocMarkdown) ? doc_tool.plus_file("doc") : doc_tool.plus_file("doc/classes");
+		// Create the main documentation directory if it doesn't exist
+		DirAccess *da = DirAccess::create_for_path(index_path);
+		da->make_dir_recursive(index_path);
+		memdelete(da);
+
 		docsrc.load_classes(index_path);
 		checked_paths.insert(index_path);
 		print_line("Loading docs from: " + index_path);
