@@ -472,6 +472,28 @@ int ExtendGDScriptParser::get_parameter_count(const lsp::Position &p_cursor, lsp
 	return count;
 }
 
+void ExtendGDScriptParser::get_document_link(List<lsp::DocumentLink> *r_links_parameter) {
+
+	int len = lines.size();
+	for (int i = 0; i < len; i++) {
+		int start_pos = lines[i].find("\"");
+		if (start_pos != -1) {
+			int end_pos = lines[i].find("\"", start_pos + 1);
+			String value = lines[i].substr(start_pos + 1, end_pos - start_pos - 1);
+
+			if (value.begins_with("res://") && ResourceLoader::exists(value)) {
+				lsp::DocumentLink link;
+				link.range.start.line = i;
+				link.range.start.character = start_pos + 1;
+				link.range.end.line = i;
+				link.range.end.character = end_pos;
+				link.target = value.replace("res://", GDScriptLanguageProtocol::get_singleton()->get_workspace()->root_uri + "/");
+				r_links_parameter->push_back(link);
+			}
+		}
+	}
+}
+
 String ExtendGDScriptParser::get_identifier_under_position(const lsp::Position &p_position, Vector2i &p_offset) const {
 
 	ERR_FAIL_INDEX_V(p_position.line, lines.size(), "");
