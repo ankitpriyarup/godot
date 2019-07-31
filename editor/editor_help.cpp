@@ -1382,9 +1382,14 @@ void EditorHelp::generate_doc() {
 		FileAccessRef f = FileAccess::open(version_file, FileAccess::READ);
 
 		String current_hash = VERSION_HASH;
-		String previous_hash = String(f->get_as_utf8_string());
+		String previous_hash = "";
+		if (f) {
+			previous_hash = String(f->get_as_utf8_string());
+		}
 		if (current_hash != previous_hash) {
-			is_updating = true;
+			if (previous_hash == "") {
+				is_updating = true;
+			}
 			print_line("Removing Old Markdown Docs...");
 			DirAccess *dir = DirAccess::open(index_path);
 			dir->erase_contents_recursive();
