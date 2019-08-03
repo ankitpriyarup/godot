@@ -1138,6 +1138,19 @@ Error DocData::save_classes(const String &p_default_path, const Map<String, Stri
 	return OK;
 }
 
+String DocData::parse_description(String p_description) {
+	String description = p_description.strip_edges().xml_escape().replace("[b]", "**").replace("[/b]", "**").replace("[i]", "_").replace("[/i]", "_").replace("[code]", "").replace("[/code]", "").replace("[codeblock]", "").replace("[/codeblock]", "");
+	int index_pointer = description.find("[", 0);
+	while (index_pointer != -1) {
+		String link_doc_name = description.substr(index_pointer + 1, description.find("]", index_pointer + 1) - index_pointer - 1);
+		if (class_list.find(link_doc_name)) {
+			description = description.substr(0, index_pointer) + "[" + link_doc_name + "](" + link_doc_name + ".md)" + description.substr(index_pointer + link_doc_name.size() + 1, description.size() - index_pointer - link_doc_name.size() - 2);
+		}
+		index_pointer = description.find("[", index_pointer + 1);
+	}
+	return description;
+}
+
 Error DocData::save_classes_markdown(const String &p_default_path, const Map<String, String> &p_class_path) {
 
 	String index_path = p_default_path.plus_file("index.json");
@@ -1179,28 +1192,10 @@ Error DocData::save_classes_markdown(const String &p_default_path, const Map<Str
 		_write_string(f, 0, "**category:** " + category);
 
 		_write_string(f, 0, "## Brief Description:");
-		String brief_description = c.brief_description.strip_edges().xml_escape().replace("[b]", "**").replace("[/b]", "**").replace("[i]", "_").replace("[/i]", "_").replace("[code]", "").replace("[/code]", "").replace("[codeblock]", "").replace("[/codeblock]", "");
-		int index_pointer = brief_description.find("[", 0);
-		while (index_pointer != -1) {
-			String link_doc_name = brief_description.substr(index_pointer + 1, brief_description.find("]", index_pointer + 1) - index_pointer - 1);
-			if (class_list.find(link_doc_name)) {
-				brief_description = brief_description.substr(0, index_pointer) + "[" + link_doc_name + "](" + link_doc_name + ".md)" + brief_description.substr(index_pointer + link_doc_name.size() + 1, brief_description.size() - index_pointer - link_doc_name.size() - 2);
-			}
-			index_pointer = brief_description.find("[", index_pointer + 1);
-		}
-		_write_string(f, 0, brief_description);
+		_write_string(f, 0, parse_description(c.brief_description));
 
 		_write_string(f, 0, "## Description:");
-		String description = c.description.strip_edges().xml_escape().replace("[b]", "**").replace("[/b]", "**").replace("[i]", "_").replace("[/i]", "_").replace("[code]", "").replace("[/code]", "").replace("[codeblock]", "").replace("[/codeblock]", "");
-		index_pointer = description.find("[", 0);
-		while (index_pointer != -1) {
-			String link_doc_name = description.substr(index_pointer + 1, description.find("]", index_pointer + 1) - index_pointer - 1);
-			if (class_list.find(link_doc_name)) {
-				description = description.substr(0, index_pointer) + "[" + link_doc_name + "](" + link_doc_name + ".md)" + description.substr(index_pointer + link_doc_name.size() + 1, description.size() - index_pointer - link_doc_name.size() - 2);
-			}
-			index_pointer = description.find("[", index_pointer + 1);
-		}
-		_write_string(f, 0, description);
+		_write_string(f, 0, parse_description(c.description));
 
 		if (c.tutorials.size() > 0) {
 			_write_string(f, 0, "## Tutorials:");
@@ -1288,16 +1283,7 @@ Error DocData::save_classes_markdown(const String &p_default_path, const Map<Str
 					_write_string(f, 0, "|Setter|" + p.setter + "|");
 					_write_string(f, 0, "|Getter|" + p.getter + "|");
 				}
-				String property_description = p.description.strip_edges().xml_escape().replace("[b]", "**").replace("[/b]", "**").replace("[i]", "_").replace("[/i]", "_").replace("[code]", "").replace("[/code]", "").replace("[codeblock]", "").replace("[/codeblock]", "");
-				index_pointer = property_description.find("[", 0);
-				while (index_pointer != -1) {
-					String link_doc_name = property_description.substr(index_pointer + 1, property_description.find("]", index_pointer + 1) - index_pointer - 1);
-					if (class_list.find(link_doc_name)) {
-						property_description = property_description.substr(0, index_pointer) + "[" + link_doc_name + "](" + link_doc_name + ".md)" + property_description.substr(index_pointer + link_doc_name.size() + 1, property_description.size() - index_pointer - link_doc_name.size() - 2);
-					}
-					index_pointer = property_description.find("[", index_pointer + 1);
-				}
-				_write_string(f, 0, property_description);
+				_write_string(f, 0, parse_description(p.description));
 			}
 		}
 
