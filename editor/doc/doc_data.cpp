@@ -1143,7 +1143,24 @@ String DocData::parse_description(String p_description) {
 	int index_pointer = description.find("[", 0);
 	while (index_pointer != -1) {
 		String link_doc_name = description.substr(index_pointer + 1, description.find("]", index_pointer + 1) - index_pointer - 1);
-		if (class_list.find(link_doc_name)) {
+		if (link_doc_name.find("member ") != -1) {
+			int seperator_pos = link_doc_name.find(" ");
+			String link_doc_member = link_doc_name.substr(seperator_pos + 1, link_doc_name.size() - seperator_pos);
+			description = description.substr(0, index_pointer) + "[" + link_doc_member + "](#" + link_doc_member + ")" + description.substr(index_pointer + link_doc_name.size() + 1, description.size() - index_pointer - link_doc_name.size() - 2);
+		} else if (link_doc_name.find("signal ") != -1) {
+			description = description.substr(0, index_pointer) + "[" + link_doc_name + "](#Signals)" + description.substr(index_pointer + link_doc_name.size() + 1, description.size() - index_pointer - link_doc_name.size() - 2);
+		} else if (link_doc_name.find("method ") != -1) {
+			int seperator_pos = link_doc_name.find(" ");
+			String link_doc_method = link_doc_name.substr(seperator_pos + 1, link_doc_name.size() - seperator_pos);
+			int class_seperator = link_doc_method.find(".");
+			if (class_seperator == -1) {
+				description = description.substr(0, index_pointer) + "[" + link_doc_method + "](#" + link_doc_method + ")" + description.substr(index_pointer + link_doc_name.size() + 1, description.size() - index_pointer - link_doc_name.size() - 2);
+			} else {
+				String link_doc_class = link_doc_method.substr(0, class_seperator);
+				String link_doc_method_name = link_doc_method.substr(class_seperator + 1, link_doc_method.size() - class_seperator);
+				description = description.substr(0, index_pointer) + "[" + link_doc_method_name + "](" + link_doc_class + ".md#" + link_doc_method_name + ")" + description.substr(index_pointer + link_doc_name.size() + 1, description.size() - index_pointer - link_doc_name.size() - 2);
+			}
+		} else if (class_list.find(link_doc_name)) {
 			description = description.substr(0, index_pointer) + "[" + link_doc_name + "](" + link_doc_name + ".md)" + description.substr(index_pointer + link_doc_name.size() + 1, description.size() - index_pointer - link_doc_name.size() - 2);
 		}
 		index_pointer = description.find("[", index_pointer + 1);
@@ -1270,10 +1287,11 @@ Error DocData::save_classes_markdown(const String &p_default_path, const Map<Str
 			for (int i = 0; i < c.properties.size(); i++) {
 
 				const PropertyDoc &p = c.properties[i];
+				_write_string(f, 0, "### " + p.name);
 				if (c.properties[i].enumeration != String()) {
-					_write_string(f, 0, "- " + c.properties[i].enumeration + " " + p.name);
+					_write_string(f, 0, "> " + c.properties[i].enumeration + " " + p.name);
 				} else {
-					_write_string(f, 0, "- " + p.type + " " + p.name);
+					_write_string(f, 0, "> " + p.type + " " + p.name);
 				}
 
 				_write_string(f, 0, "\n");
