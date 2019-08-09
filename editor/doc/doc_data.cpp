@@ -734,7 +734,6 @@ Error DocData::load_classes(const String &p_dir) {
 			if (err2)
 				return err2;
 
-			print_line(p_dir);
 			_load(parser);
 		}
 		path = da->get_next(&isdir);

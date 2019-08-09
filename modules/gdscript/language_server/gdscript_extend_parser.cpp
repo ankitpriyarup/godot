@@ -528,55 +528,44 @@ String ExtendGDScriptParser::get_identifier_under_position(const lsp::Position &
 	return "";
 }
 
-void ExtendGDScriptParser::get_all_occurence(const lsp::DocumentSymbol *p_symbol, List<lsp::Range> *r_resolved_range)
-{
-	int declaration_indentation = lines[p_symbol->range.start.line].get_slice_count(" ");
-	for (int i = p_symbol->range.start.line + 1; i < lines.size(); ++i) {
-		int find_res_1 = lines[i].find("(" + p_symbol->name);
-		int find_res_2 = lines[i].find("," + p_symbol->name);
-		int find_res_3 = lines[i].find("." + p_symbol->name);
-		int find_res_4 = lines[i].find(" " + p_symbol->name);
-		int find_res_5 = lines[i].find(p_symbol->name + " ");
+void ExtendGDScriptParser::get_all_occurence(const lsp::DocumentSymbol *p_symbol, List<lsp::Range> *r_resolved_range) {
 
-		if (find_res_1 != -1) {
-			lsp::Range range;
-			range.start.line = i;
-			range.start.character = find_res_1 + 1;
-			range.end.line = i;
-			range.end.character = range.start.character + p_symbol->name.length();
-			r_resolved_range->push_back(range);
-		}
-		if (find_res_2 != -1) {
-			lsp::Range range;
-			range.start.line = i;
-			range.start.character = find_res_2 + 1;
-			range.end.line = i;
-			range.end.character = range.start.character + p_symbol->name.length();
-			r_resolved_range->push_back(range);
-		}
-		if (find_res_3 != -1) {
-			lsp::Range range;
-			range.start.line = i;
-			range.start.character = find_res_3 + 1;
-			range.end.line = i;
-			range.end.character = range.start.character + p_symbol->name.length();
-			r_resolved_range->push_back(range);
-		}
-		if (find_res_4 != -1) {
-			lsp::Range range;
-			range.start.line = i;
-			range.start.character = find_res_4 + 1;
-			range.end.line = i;
-			range.end.character = range.start.character + p_symbol->name.length();
-			r_resolved_range->push_back(range);
-		}
-		if (find_res_5 != -1) {
-			lsp::Range range;
-			range.start.line = i;
-			range.start.character = find_res_5;
-			range.end.line = i;
-			range.end.character = range.start.character + p_symbol->name.length();
-			r_resolved_range->push_back(range);
+	int declaration_indentation = lines[p_symbol->range.start.line].get_slice_count(" ");
+	for (int i = p_symbol->range.start.line; i < lines.size(); ++i) {
+
+		int cur_pos = 0;
+		while (cur_pos < lines[i].size()) {
+			int find_res_1 = lines[i].find("(" + p_symbol->name, cur_pos);
+			int find_res_2 = lines[i].find("," + p_symbol->name, cur_pos);
+			int find_res_3 = lines[i].find(" " + p_symbol->name, cur_pos);
+			int find_res_4 = lines[i].find(p_symbol->name + " ", cur_pos);
+
+			if (find_res_1 == -1 && find_res_2 == -1 && find_res_3 == -1 && find_res_4 == -1) {
+				break;
+			} else {
+
+				int next_pos = lines[i].size();
+				if (find_res_1 != -1) {
+					next_pos = MIN(next_pos, find_res_1);
+				}
+				if (find_res_2 != -1) {
+					next_pos = MIN(next_pos, find_res_2);
+				}
+				if (find_res_3 != -1) {
+					next_pos = MIN(next_pos, find_res_3);
+				}
+				if (find_res_4 != -1) {
+					next_pos = MIN(next_pos, find_res_4);
+				}
+
+				lsp::Range range;
+				range.start.line = i;
+				range.start.character = next_pos + 1;
+				range.end.line = i;
+				range.end.character = range.start.character + p_symbol->name.length();
+				cur_pos = range.end.character + 1;
+				r_resolved_range->push_back(range);
+			}
 		}
 
 		int current_indentation = lines[p_symbol->range.start.line].get_slice_count(" ");
